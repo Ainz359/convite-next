@@ -1,36 +1,33 @@
-name: Deploy to GitHub Pages
+name: Deploy to Vercel
 
 on:
   push:
-    branches: [convite-next] # ou master
-
-permissions:
-  contents: write
+    branches: [main] 
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
-      - name: Checkout 🛎️
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Node.js 🔧
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18' # ou a versão que você está usando
-          
-      - name: Install dependencies 📦
-        run: npm ci # ou yarn install --frozen-lockfile
-        
-      - name: Build 🏗️
-        run: npm run build # isso deve gerar o diretório 'out'
-        
-      - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@v4
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v20
         with:
-          branch: convite-next
-          folder: out
-          token: ${{ secrets.GITHUB_TOKEN }}
-          clean: true
-          single-commit: true
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: .
+          prod: true

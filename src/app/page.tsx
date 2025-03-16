@@ -198,7 +198,7 @@ export default function Convite() {
       )}
       
       {showDateTimePicker && (
-        <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+        <div className="bg-gray-900 p-6 rounded-lg shadow-lg w-full max-w-md">
           <div className="space-y-4 mb-6">
             <div className="flex flex-col">
               <label htmlFor="date" className="mb-2 font-medium text-gray-700">Escolha uma data:</label>
@@ -209,7 +209,7 @@ export default function Convite() {
                 onChange={(e) => setSelectedDate(e.target.value)}
                 min={getTodayDate()}
                 max={getMaxDate()}
-                className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                className="bg-gray-600 border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
               />
             </div>
             
@@ -219,7 +219,7 @@ export default function Convite() {
                 id="time"
                 value={selectedTime}
                 onChange={(e) => setSelectedTime(e.target.value)}
-                className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                className="bg-gray-600 border border-gray-300 text-white rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
               >
                 <option value="">Selecione um horário</option>
                 {timeOptions.map((time) => (
