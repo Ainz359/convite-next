@@ -8,12 +8,12 @@ import { getFirestore, doc, setDoc } from 'firebase/firestore';
 
 
 const firebaseConfig = {
-  apiKey: "SUA_API_KEY",
-  authDomain: "FIRE_BASE_APP",
-  projectId: "PROJECT_NAME",
-  storageBucket: "STORAGE_BUCKET",
-  messagingSenderId: "MESSAGE_ID",
-  appId: "APP_ID"
+  apiKey: process.env.API_KEY,
+  authDomain: process.env.FIRE_BASE_APP,
+  projectId: process.env.PROJECT_ID,
+  storageBucket: process.env.STORAGE_BUCKET,
+  messagingSenderId: process.env.MESSAGE_SENDER_ID,
+  appId: process.env.APP_ID
 };
 
 const app = initializeApp(firebaseConfig);
