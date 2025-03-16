@@ -23,11 +23,11 @@ jobs:
     - name: Build
       run: npm run build
       env:
-        API_KEY: ${{ var.API_KEY }}
-        FIRE_BASE_APP: ${{ var.FIRE_BASE_APP }}
-        PROJECT_ID: ${{ var.PROJECT_ID }}
-        STORAGE_BUCKET: ${{ var.STORAGE_BUCKET}}
-        MESSAGE_SENDER_ID: ${{ var.MESSAGE_SENDER_ID }}
-        APP_ID: ${{ var.APP_ID }}
+        API_KEY: ${{ vars.API_KEY }}
+        FIRE_BASE_APP: ${{ vars.FIRE_BASE_APP }}
+        PROJECT_ID: ${{ vars.PROJECT_ID }}
+        STORAGE_BUCKET: ${{ vars.STORAGE_BUCKET}}
+        MESSAGE_SENDER_ID: ${{ vars.MESSAGE_SENDER_ID }}
+        APP_ID: ${{ vars.APP_ID }}
       
-    # Aqui você adicionaria os passos para deploy em sua plataforma preferida
+ 
