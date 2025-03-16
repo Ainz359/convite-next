@@ -1,23 +1,16 @@
+"use client"
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import Head from 'next/head';
-import styles from '../styles/Convite.module.css';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { collection, doc, getFirestore, setDoc } from 'firebase/firestore';
+import Head from 'next/head';
+import { useState, useEffect } from 'react';
 
-
-const firebaseConfig = {
-  apiKey: process.env.API_KEY,
-  authDomain: process.env.FIRE_BASE_APP,
-  projectId: process.env.PROJECT_ID,
-  storageBucket: process.env.STORAGE_BUCKET,
-  messagingSenderId: process.env.MESSAGE_SENDER_ID,
-  appId: process.env.APP_ID
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+interface ResponseData {
+  resposta: string;
+  data: string;
+  dataEscolhida?: string;
+  horaEscolhida?: string;
+}
 
 interface HeartProps {
   position: {
@@ -29,7 +22,7 @@ interface HeartProps {
 const Heart: React.FC<HeartProps> = ({ position }) => {
   return (
     <div 
-      className={styles.heart} 
+      className="absolute text-2xl animate-bounce" 
       style={{ 
         left: position.x, 
         top: position.y 
@@ -41,13 +34,43 @@ const Heart: React.FC<HeartProps> = ({ position }) => {
 };
 
 export default function Convite() {
-  const router = useRouter();
+  // Initialize Firebase only on client side
+  const [app, setApp] = useState<any>(null);
+  const [db, setDb] = useState<any>(null);
+  
+  useEffect(() => {
+    // Firebase configuration should only be initialized on the client
+    const firebaseConfig = {
+      apiKey: process.env.NEXT_PUBLIC_API_KEY,
+      authDomain: process.env.NEXT_PUBLIC_FIRE_BASE_APP,
+      projectId: process.env.NEXT_PUBLIC_PROJECT_ID,
+      storageBucket: process.env.NEXT_PUBLIC_STORAGE_BUCKET,
+      messagingSenderId: process.env.NEXT_PUBLIC_MESSAGE_SENDER_ID,
+      appId: process.env.NEXT_PUBLIC_APP_ID
+    };
+
+    // Initialize Firebase
+    const firebaseApp = initializeApp(firebaseConfig);
+    setApp(firebaseApp);
+    setDb(getFirestore(firebaseApp));
+  }, []);
+
   const [hearts, setHearts] = useState<HeartProps[]>([]);
   const [message, setMessage] = useState<string>('');
-  const [showNameForm, setShowNameForm] = useState<boolean>(false);
-  const [name, setName] = useState<string>('');
   const [noButtonStyle, setNoButtonStyle] = useState({});
-  const { id: inviteId } = router.query;
+  
+  // Estados para o calendário e hora
+  const [showDateTimePicker, setShowDateTimePicker] = useState<boolean>(false);
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedTime, setSelectedTime] = useState<string>('');
+  
+  // Opções de horário
+  const timeOptions = [
+    '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', 
+    '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
+    '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', 
+    '21:00', '21:30', '22:00'
+  ];
 
   // Criar corações
   const createHearts = () => {
@@ -78,14 +101,21 @@ export default function Convite() {
   };
 
   // Salvar resposta no Firebase
-  const saveResponse = async (answer: string, respondentName: string) => {
+  const saveResponse = async (answer: string, date?: string, time?: string) => {
+    if (!db) return;
+    
     try {
-      const docId = inviteId?.toString() || Date.now().toString();
-      await setDoc(doc(db, "convites", docId), {
+      const responseData: ResponseData = {
         resposta: answer,
-        nome: respondentName,
         data: new Date().toISOString()
-      });
+      };
+      
+      // Adiciona data e hora se disponíveis
+      if (date) responseData.dataEscolhida = date;
+      if (time) responseData.horaEscolhida = time;
+      
+      const docRef = doc(collection(db, "convites"));
+      await setDoc(docRef, responseData);
       console.log("Resposta salva com sucesso!");
     } catch (error) {
       console.error("Erro ao salvar resposta:", error);
@@ -94,47 +124,67 @@ export default function Convite() {
 
   // Quando clicar em Sim
   const handleYesClick = () => {
+    console.log("Yes button clicked!");
     createHearts();
-    setMessage("Que maravilha! Mal posso esperar!");
-    setShowNameForm(true);
+    setMessage("Que maravilha! Escolha uma data e hora que funcione para você!");
+    setShowDateTimePicker(true);
   };
 
   // Quando clicar em Não (caso consiga)
   const handleNoClick = () => {
-    saveResponse("Não", "Pessoa Misteriosa");
+    saveResponse("Não");
     setMessage("Botão impossível de clicar... mas você conseguiu! Impressionante!");
   };
 
-  // Quando enviar o nome
-  const handleSubmitName = () => {
-    if (name.trim()) {
-      saveResponse("Sim", name);
-      setMessage(`Obrigado, ${name}! Sua resposta foi registrada!`);
-      setShowNameForm(false);
+  // Quando enviar a data e hora
+  const handleSubmitDateTime = () => {
+    if (selectedDate && selectedTime) {
+      saveResponse("Sim", selectedDate, selectedTime);
+      setMessage(`Obrigado! Seu encontro está marcado para ${selectedDate} às ${selectedTime}. Mal posso esperar!`);
+      setShowDateTimePicker(false);
     } else {
-      setMessage("Por favor, digite seu nome!");
+      setMessage("Por favor, selecione uma data e horário!");
     }
   };
 
+  // Calcular data mínima (hoje)
+  const getTodayDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Calcular data máxima (30 dias a partir de hoje)
+  const getMaxDate = () => {
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 30);
+    const year = maxDate.getFullYear();
+    const month = String(maxDate.getMonth() + 1).padStart(2, '0');
+    const day = String(maxDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   return (
-    <div className={styles.container}>
+    <div className="min-h-screen bg-gradient-to-b from-pink-100 to-purple-200 flex flex-col items-center justify-center p-4 relative">
       <Head>
         <title>Convite Romântico</title>
         <meta name="description" content="Um convite especial para você" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <h1 className={styles.title}>Você quer sair comigo?</h1>
+      <h1 className="text-4xl md:text-5xl font-bold text-pink-600 mb-10 text-center">Você quer sair comigo?</h1>
       
-      <div className={styles.buttons}>
+      <div className="flex space-x-6 mb-8">
         <button 
-          className={styles.button} 
+          className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105"
           onClick={handleYesClick}
         >
           Sim
         </button>
         <button 
-          className={styles.button} 
+          className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105"
           style={noButtonStyle} 
           onMouseOver={moveButton}
           onClick={handleNoClick}
@@ -143,22 +193,49 @@ export default function Convite() {
         </button>
       </div>
 
-      {message && <div className={styles.message}>{message}</div>}
+      {message && (
+        <div className="bg-white bg-opacity-70 p-4 rounded-lg shadow-md text-center text-lg font-medium text-gray-800 mb-6 max-w-md">
+          {message}
+        </div>
+      )}
       
-      {showNameForm && (
-        <div className={styles.formContainer}>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Digite seu nome"
-            className={styles.input}
-          />
+      {showDateTimePicker && (
+        <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+          <div className="space-y-4 mb-6">
+            <div className="flex flex-col">
+              <label htmlFor="date" className="mb-2 font-medium text-gray-700">Escolha uma data:</label>
+              <input
+                type="date"
+                id="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                min={getTodayDate()}
+                max={getMaxDate()}
+                className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
+              />
+            </div>
+            
+            <div className="flex flex-col">
+              <label htmlFor="time" className="mb-2 font-medium text-gray-700">Escolha um horário:</label>
+              <select
+                id="time"
+                value={selectedTime}
+                onChange={(e) => setSelectedTime(e.target.value)}
+                className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
+              >
+                <option value="">Selecione um horário</option>
+                {timeOptions.map((time) => (
+                  <option key={time} value={time}>{time}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          
           <button 
-            onClick={handleSubmitName}
-            className={styles.button}
+            onClick={handleSubmitDateTime}
+            className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-4 rounded-md transition-colors duration-300"
           >
-            Enviar
+            Confirmar
           </button>
         </div>
       )}
