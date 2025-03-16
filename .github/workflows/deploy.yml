@@ -23,11 +23,11 @@ jobs:
     - name: Build
       run: npm run build
       env:
-        NEXT_PUBLIC_FIREBASE_API_KEY: ${{ var.API_KEY }}
-        NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ var.FIRE_BASE_APP }}
-        NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ var.PROJECT_ID }}
-        NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ var.STORAGE_BUCKET}}
-        NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ var.MESSAGE_SENDER_ID }}
-        NEXT_PUBLIC_FIREBASE_APP_ID: ${{ var.APP_ID }}
+        API_KEY: ${{ var.API_KEY }}
+        FIRE_BASE_APP: ${{ var.FIRE_BASE_APP }}
+        PROJECT_ID: ${{ var.PROJECT_ID }}
+        STORAGE_BUCKET: ${{ var.STORAGE_BUCKET}}
+        MESSAGE_SENDER_ID: ${{ var.MESSAGE_SENDER_ID }}
+        APP_ID: ${{ var.APP_ID }}
       
     # Aqui você adicionaria os passos para deploy em sua plataforma preferida
