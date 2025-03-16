@@ -244,7 +244,7 @@ export default function Convite() {
                 ))}
               </select>
             </div>
-
+<span>Quero saber uma Região que te agrada assim não perco tempo olhando algo do outro lado da cidade </span>
             <div className="flex flex-col">
               <label className="mb-2 font-medium text-gray-700">Selecione o local:</label>
               <DynamicMap onLocationSelect={(coords) => {
@@ -253,7 +253,7 @@ export default function Convite() {
               }} />
             </div>
           </div>
-<span>"Parece que não acontece nada, mas a localização está sendo salva. Minha 1 hora acabou antes de fazer bonito 😟</span>
+<span>Parece que não acontece nada, mas a localização está sendo salva. Minha 1 hora acabou antes de fazer bonito 😟</span>
           <button
             onClick={handleSubmitDateTime}
             className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-4 rounded-md transition-colors duration-300"

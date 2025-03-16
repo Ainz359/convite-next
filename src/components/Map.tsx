@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { MapContainer, TileLayer, Marker, useMapEvent } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
