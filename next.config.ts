@@ -1,19 +1,14 @@
-import type { NextConfig } from 'next';
-
-const repo = process.env.GITHUB_REPOSITORY?.replace(/.*?\//, '') || '';
+import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  output: 'export',
+  // Se você estiver usando imagens, desative a otimização para build estático
   images: {
     unoptimized: true,
   },
-  // Configurações necessárias para o GitHub Pages
-  assetPrefix: process.env.NODE_ENV === 'production' ? `/${repo}` : '',
-  basePath: process.env.NODE_ENV === 'production' ? `/${repo}` : '',
-  // Necessário para exportação estática
-  output: 'export',
-  // Desabilitar trailing slash
-  trailingSlash: false,
+  // Se você estiver usando rotas dinâmicas, pode ser necessário configurar trailingSlash
+  trailingSlash: true,
 };
 
 export default nextConfig;

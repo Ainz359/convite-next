@@ -1,9 +1,9 @@
 "use client"
 
 import { initializeApp } from 'firebase/app';
-import { collection, doc, getFirestore, setDoc } from 'firebase/firestore';
+import { Firestore, collection, doc, getFirestore, setDoc } from 'firebase/firestore';
 import Head from 'next/head';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 interface ResponseData {
   resposta: string;
@@ -34,9 +34,8 @@ const Heart: React.FC<HeartProps> = ({ position }) => {
 };
 
 export default function Convite() {
-  // Initialize Firebase only on client side
-  const [app, setApp] = useState<any>(null);
-  const [db, setDb] = useState<any>(null);
+  // Initialize Firebase only on client sid
+  const [db, setDb] = useState<Firestore | null>(null); // Firestore
   
   useEffect(() => {
     // Firebase configuration should only be initialized on the client
@@ -51,7 +50,6 @@ export default function Convite() {
 
     // Initialize Firebase
     const firebaseApp = initializeApp(firebaseConfig);
-    setApp(firebaseApp);
     setDb(getFirestore(firebaseApp));
   }, []);
 

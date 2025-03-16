@@ -1,39 +1,36 @@
-# .github/workflows/deploy.yml
-name: Deploy to Production
+name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ convite-next ]
+    branches: [convite-next] # ou master
+
+permissions:
+  contents: write
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '16'
-        
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: Build
-      run: npm run build
-      env:
-        API_KEY: ${{ vars.API_KEY }}
-        FIRE_BASE_APP: ${{ vars.FIRE_BASE_APP }}
-        PROJECT_ID: ${{ vars.PROJECT_ID }}
-        STORAGE_BUCKET: ${{ vars.STORAGE_BUCKET}}
-        MESSAGE_SENDER_ID: ${{ vars.MESSAGE_SENDER_ID }}
-        APP_ID: ${{ vars.APP_ID }}
-      
+      - name: Checkout 🛎️
+        uses: actions/checkout@v3
 
-    - name: Deploy to GitHub Pages
-      uses: Ainz359/github-pages-deploy-action@v4
-      with:
-        folder: out 
-        branch: convite-next
- 
+      - name: Setup Node.js 🔧
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18' # ou a versão que você está usando
+          
+      - name: Install dependencies 📦
+        run: npm ci # ou yarn install --frozen-lockfile
+        
+      - name: Build 🏗️
+        run: npm run build # isso deve gerar o diretório 'out'
+        
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: convite-next
+          folder: out
+          token: ${{ secrets.GITHUB_TOKEN }}
+          clean: true
+          single-commit: true
