@@ -4,12 +4,17 @@ import { initializeApp } from 'firebase/app';
 import { Firestore, collection, doc, getFirestore, setDoc } from 'firebase/firestore';
 import Head from 'next/head';
 import { useEffect, useState } from 'react';
+import dynamic from "next/dynamic";
 
 interface ResponseData {
   resposta: string;
   data: string;
   dataEscolhida?: string;
   horaEscolhida?: string;
+  location?: {
+    lat: number;
+    lng: number;
+  }
 }
 
 interface HeartProps {
@@ -21,11 +26,11 @@ interface HeartProps {
 
 const Heart: React.FC<HeartProps> = ({ position }) => {
   return (
-    <div 
-      className="absolute text-2xl animate-bounce" 
-      style={{ 
-        left: position.x, 
-        top: position.y 
+    <div
+      className="absolute text-2xl animate-bounce"
+      style={{
+        left: position.x,
+        top: position.y
       }}
     >
       ❤️
@@ -34,11 +39,12 @@ const Heart: React.FC<HeartProps> = ({ position }) => {
 };
 
 export default function Convite() {
-  // Initialize Firebase only on client sid
-  const [db, setDb] = useState<Firestore | null>(null); // Firestore
-  
+
+  const DynamicMap = dynamic(() => import("@/components/Map"), { ssr: false });
+  // Estado para o Firestore
+  const [db, setDb] = useState<Firestore | null>(null);
+
   useEffect(() => {
-    // Firebase configuration should only be initialized on the client
     const firebaseConfig = {
       apiKey: process.env.NEXT_PUBLIC_API_KEY,
       authDomain: process.env.NEXT_PUBLIC_FIRE_BASE_APP,
@@ -47,30 +53,37 @@ export default function Convite() {
       messagingSenderId: process.env.NEXT_PUBLIC_MESSAGE_SENDER_ID,
       appId: process.env.NEXT_PUBLIC_APP_ID
     };
+    console.log("Firebase Config:", firebaseConfig);
 
-    // Initialize Firebase
-    const firebaseApp = initializeApp(firebaseConfig);
-    setDb(getFirestore(firebaseApp));
+    try {
+      const firebaseApp = initializeApp(firebaseConfig);
+      console.log("Firebase App initialized:", firebaseApp);
+      setDb(getFirestore(firebaseApp));
+    } catch (error) {
+      console.error("Erro ao inicializar o Firebase:", error);
+    }
   }, []);
+
 
   const [hearts, setHearts] = useState<HeartProps[]>([]);
   const [message, setMessage] = useState<string>('');
   const [noButtonStyle, setNoButtonStyle] = useState({});
-  
-  // Estados para o calendário e hora
+
+  // Estados para data, hora e localização
   const [showDateTimePicker, setShowDateTimePicker] = useState<boolean>(false);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<string>('');
-  
+  const [selectedCoordinates, setSelectedCoordinates] = useState<{ lat: number, lng: number } | null>(null);
+
   // Opções de horário
   const timeOptions = [
-    '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', 
+    '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
     '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
-    '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', 
+    '18:00', '18:30', '19:00', '19:30', '20:00', '20:30',
     '21:00', '21:30', '22:00'
   ];
 
-  // Criar corações
+  // Função para criar os corações
   const createHearts = () => {
     const newHearts = [];
     for (let i = 0; i < 30; i++) {
@@ -83,7 +96,7 @@ export default function Convite() {
     }
     setHearts(newHearts);
 
-    // Remover corações após animação
+    // Remove os corações após a animação
     setTimeout(() => {
       setHearts([]);
     }, 2000);
@@ -98,20 +111,25 @@ export default function Convite() {
     });
   };
 
-  // Salvar resposta no Firebase
+  // Salvar resposta no Firestore
   const saveResponse = async (answer: string, date?: string, time?: string) => {
-    if (!db) return;
-    
+    if (!db) {
+      console.warn("Firestore ainda não está inicializado.");
+      return;
+    }
+
     try {
       const responseData: ResponseData = {
         resposta: answer,
         data: new Date().toISOString()
       };
-      
-      // Adiciona data e hora se disponíveis
+
       if (date) responseData.dataEscolhida = date;
       if (time) responseData.horaEscolhida = time;
-      
+      if (selectedCoordinates) responseData.location = selectedCoordinates;
+
+      console.log("Enviando dados para Firestore:", responseData);
+
       const docRef = doc(collection(db, "convites"));
       await setDoc(docRef, responseData);
       console.log("Resposta salva com sucesso!");
@@ -120,32 +138,30 @@ export default function Convite() {
     }
   };
 
-  // Quando clicar em Sim
+  // Eventos dos botões
   const handleYesClick = () => {
     console.log("Yes button clicked!");
     createHearts();
-    setMessage("Que maravilha! Escolha uma data e hora que funcione para você!");
+    setMessage("Que maravilha! Escolha uma data, hora e local que funcionem para você!");
     setShowDateTimePicker(true);
   };
 
-  // Quando clicar em Não (caso consiga)
   const handleNoClick = () => {
     saveResponse("Não");
     setMessage("Botão impossível de clicar... mas você conseguiu! Impressionante!");
   };
 
-  // Quando enviar a data e hora
   const handleSubmitDateTime = () => {
-    if (selectedDate && selectedTime) {
+    if (selectedDate && selectedTime && selectedCoordinates) {
       saveResponse("Sim", selectedDate, selectedTime);
-      setMessage(`Obrigado! Seu encontro está marcado para ${selectedDate} às ${selectedTime}. Mal posso esperar!`);
+      setMessage(`Obrigado! Seu encontro está marcado para ${selectedDate} às ${selectedTime}.`);
       setShowDateTimePicker(false);
     } else {
-      setMessage("Por favor, selecione uma data e horário!");
+      setMessage("Por favor, selecione uma data, horário e local!");
     }
   };
 
-  // Calcular data mínima (hoje)
+  // Funções para obter data mínima e máxima
   const getTodayDate = () => {
     const today = new Date();
     const year = today.getFullYear();
@@ -154,7 +170,6 @@ export default function Convite() {
     return `${year}-${month}-${day}`;
   };
 
-  // Calcular data máxima (30 dias a partir de hoje)
   const getMaxDate = () => {
     const maxDate = new Date();
     maxDate.setDate(maxDate.getDate() + 30);
@@ -173,17 +188,17 @@ export default function Convite() {
       </Head>
 
       <h1 className="text-4xl md:text-5xl font-bold text-pink-600 mb-10 text-center">Você quer sair comigo?</h1>
-      
+
       <div className="flex space-x-6 mb-8">
-        <button 
+        <button
           className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105"
           onClick={handleYesClick}
         >
           Sim
         </button>
-        <button 
+        <button
           className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105"
-          style={noButtonStyle} 
+          style={noButtonStyle}
           onMouseOver={moveButton}
           onClick={handleNoClick}
         >
@@ -196,10 +211,11 @@ export default function Convite() {
           {message}
         </div>
       )}
-      
+
       {showDateTimePicker && (
         <div className="bg-gray-900 p-6 rounded-lg shadow-lg w-full max-w-md">
           <div className="space-y-4 mb-6">
+            {/* Campo de data */}
             <div className="flex flex-col">
               <label htmlFor="date" className="mb-2 font-medium text-gray-700">Escolha uma data:</label>
               <input
@@ -212,7 +228,8 @@ export default function Convite() {
                 className="bg-gray-600 border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
               />
             </div>
-            
+
+            {/* Campo de horário */}
             <div className="flex flex-col">
               <label htmlFor="time" className="mb-2 font-medium text-gray-700">Escolha um horário:</label>
               <select
@@ -227,9 +244,17 @@ export default function Convite() {
                 ))}
               </select>
             </div>
+
+            <div className="flex flex-col">
+              <label className="mb-2 font-medium text-gray-700">Selecione o local:</label>
+              <DynamicMap onLocationSelect={(coords) => {
+                console.log("Coordinates selected:", coords);
+                setSelectedCoordinates(coords);
+              }} />
+            </div>
           </div>
-          
-          <button 
+<span>"Parece que não acontece nada, mas a localização está sendo salva. Minha 1 hora acabou antes de fazer bonito 😟</span>
+          <button
             onClick={handleSubmitDateTime}
             className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-4 rounded-md transition-colors duration-300"
           >
