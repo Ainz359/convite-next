@@ -30,4 +30,10 @@ jobs:
         MESSAGE_SENDER_ID: ${{ vars.MESSAGE_SENDER_ID }}
         APP_ID: ${{ vars.APP_ID }}
       
+
+    - name: Deploy to GitHub Pages
+      uses: Ainz359/github-pages-deploy-action@v4
+      with:
+        folder: out 
+        branch: convite-next
  
